@@ -146,6 +146,32 @@
             text-align: center;
             letter-spacing: 0.15em;
             opacity: 0.9;
+            text-decoration: none;
+            color: inherit;
+            pointer-events: auto; /* Abilita i click */
+            cursor: pointer;
+            transition: opacity 0.3s ease;
+        }
+        .coords:hover {
+            opacity: 1;
+        }
+
+        .center-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+        }
+
+        .event-date-time {
+            font-size: 0.75rem;
+            font-weight: 300;
+            line-height: 1.6;
+            margin-top: 14px;
+            text-align: center;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            transition: color 1.2s cubic-bezier(0.25, 0.8, 0.25, 1);
         }
     </style>
 </head>
@@ -167,15 +193,20 @@
             <span>Scaramuzza</span>
         </div>
 
-        <!-- Nome evento: Giustificato -->
-        <div class="text-box justified-text" id="text-center">
-            La Bella Estate
+        <!-- Nome evento e Data/Ora raggruppati -->
+        <div class="center-container">
+            <div class="text-box justified-text" id="text-center">
+                La Bella Estate
+            </div>
+            <div class="event-date-time" id="text-date">
+                24/07/2026<br>20:00
+            </div>
         </div>
 
         <!-- Location e Coordinate distanziate -->
         <div class="text-box location-container" id="text-bottom">
             <div class="justified-text">Società Canottieri Armida</div>
-            <div class="coords">45.0538° N<br>7.6834° E</div>
+            <a href="https://www.google.com/maps/search/?api=1&query=45.0538,7.6834" target="_blank" rel="noopener" class="coords">45.0538° N<br>7.6834° E</a>
         </div>
     </div>
 
@@ -275,7 +306,7 @@
                 softnessBot = 0.15;
             }
 
-            float grain = (fract(sin(dot(v_uv * u_res, vec2(12.9898,78.233)*2.0)) * 43758.5453) - 0.5) * 0.045;
+            float grain = (fract(sin(dot(floor(v_uv * u_res / 1.8), vec2(12.9898,78.233)*2.0)) * 43758.5453) - 0.5) * 0.085;
 
             // Blocco Superiore
             vec4 topBounds = vec4(leftBoundTop, u_split + 0.03, rightBoundTop, 0.93);
@@ -408,8 +439,10 @@
                 centerTargetColor = botRgb;  // Cade all'interno del blocco inferiore
             }
 
+            let centerContrastColor = rgbToCss(getBestContrastingPaletteColor(centerTargetColor, palette));
             document.getElementById('text-top').style.color = rgbToCss(getBestContrastingPaletteColor(topRgb, palette));
-            document.getElementById('text-center').style.color = rgbToCss(getBestContrastingPaletteColor(centerTargetColor, palette));
+            document.getElementById('text-center').style.color = centerContrastColor;
+            document.getElementById('text-date').style.color = centerContrastColor;
             document.getElementById('text-bottom').style.color = rgbToCss(getBestContrastingPaletteColor(botRgb, palette));
         }
 
@@ -563,7 +596,7 @@
 
             // Spostamento viscoso della linea di divisione (più lento per maggiore fluidità)
             currentSplitY += (targetOffsetY - currentSplitY) * 0.025;
-            let dynamicSplit = Math.max(0.15, Math.min(0.85, splitRatio + currentSplitY * 0.15));
+            let dynamicSplit = Math.max(0.15, Math.min(0.85, splitRatio + currentSplitY * 0.35));
             gl.uniform1f(uSplitLoc, dynamicSplit);
 
             // Aggiorna dinamicamente il contrasto del testo basandosi sul colore sotto
@@ -580,6 +613,37 @@
         gl.uniform1f(uSplitLoc, splitRatio);
         gl.uniform2f(uOffsetLoc, 0, 0);
         gl.drawArrays(gl.TRIANGLES, 0, 6);
+
+        // --- 4. GESTIONE CUSTOM PULL-TO-REFRESH IN FULLSCREEN ---
+        let touchStartY = 0;
+        let touchStartX = 0;
+        let isPulling = false;
+
+        window.addEventListener('touchstart', function(e) {
+            if (e.touches.length === 1) {
+                touchStartY = e.touches[0].clientY;
+                touchStartX = e.touches[0].clientX;
+                isPulling = true;
+            }
+        }, { passive: true });
+
+        window.addEventListener('touchmove', function(e) {
+            if (!isPulling) return;
+            let currentY = e.touches[0].clientY;
+            let currentX = e.touches[0].clientX;
+            let diffY = currentY - touchStartY;
+            let diffX = currentX - touchStartX;
+
+            // Se l'utente trascina verso il basso per più di 120px e il gesto è prevalentemente verticale
+            if (diffY > 120 && Math.abs(diffY) > Math.abs(diffX) * 1.5) {
+                isPulling = false; // Esegui una sola volta
+                window.location.reload();
+            }
+        }, { passive: true });
+
+        window.addEventListener('touchend', function() {
+            isPulling = false;
+        });
 
     </script>
 </body>
