@@ -204,7 +204,6 @@
         uniform float u_seed;
         uniform vec2 u_offset; // Input dal giroscopio/mouse
         uniform float u_time;  // Tempo per l'animazione fluida liquida
-        uniform float u_rotation; // Rotazione dello shader per simulare l'orizzonte liquido
 
         // Funzioni per rumore Simplex
         vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
@@ -251,36 +250,41 @@
             return left * right * bottom * top;
         }
 
-        // Ruota le coordinate UV attorno al centro (0.5, 0.5)
-        vec2 rotateUV(vec2 uv, float angle) {
-            float s = sin(angle);
-            float c = cos(angle);
-            vec2 shifted = uv - 0.5;
-            vec2 rotated = vec2(
-                shifted.x * c - shifted.y * s,
-                shifted.x * s + shifted.y * c
-            );
-            return rotated + 0.5;
-        }
-
         void main() {
-            // Applica rotazione contraria per tenere l'orizzonte parallelo al terreno
-            vec2 rotatedUV = rotateUV(v_uv, u_rotation);
-
             // Effetto Parallasse + Leggera oscillazione liquida autonoma continua
-            vec2 parallaxUV = rotatedUV - u_offset * 0.02 + vec2(sin(u_time * 0.4) * 0.005, cos(u_time * 0.3) * 0.005);
+            vec2 parallaxUV = v_uv - u_offset * 0.02 + vec2(sin(u_time * 0.4) * 0.005, cos(u_time * 0.3) * 0.005);
             vec3 finalColor = u_bg;
+
+            float aspect = u_res.x / u_res.y;
+
+            // Parametri standard (ottimizzati per desktop/landscape)
+            float leftBoundTop = 0.08;
+            float rightBoundTop = 0.92;
+            float leftBoundBot = 0.06;
+            float rightBoundBot = 0.94;
+            float softnessTop = 0.10;
+            float softnessBot = 0.09;
+
+            // Su schermi verticali (mobile/portrait), aumentiamo la morbidezza e allarghiamo i blocchi facendoli strabordare
+            if (aspect < 1.0) {
+                leftBoundTop = -0.15;
+                rightBoundTop = 1.15;
+                leftBoundBot = -0.18;
+                rightBoundBot = 1.18;
+                softnessTop = 0.16;
+                softnessBot = 0.15;
+            }
 
             float grain = (fract(sin(dot(v_uv * u_res, vec2(12.9898,78.233)*2.0)) * 43758.5453) - 0.5) * 0.045;
 
             // Blocco Superiore
-            vec4 topBounds = vec4(0.08, u_split + 0.03, 0.92, 0.93);
-            float topMask = rothkoRect(parallaxUV, topBounds, 0.10, 0.028, u_offset);
+            vec4 topBounds = vec4(leftBoundTop, u_split + 0.03, rightBoundTop, 0.93);
+            float topMask = rothkoRect(parallaxUV, topBounds, softnessTop, 0.028, u_offset);
             finalColor = mix(finalColor, u_topColor, topMask);
 
             // Blocco Inferiore
-            vec4 botBounds = vec4(0.06, 0.06, 0.94, u_split - 0.03);
-            float botMask = rothkoRect(parallaxUV, botBounds, 0.09, 0.025, u_offset * -1.2); // Si muove in asincrono
+            vec4 botBounds = vec4(leftBoundBot, 0.06, rightBoundBot, u_split - 0.03);
+            float botMask = rothkoRect(parallaxUV, botBounds, softnessBot, 0.025, u_offset * -1.2); // Si muove in asincrono
             finalColor = mix(finalColor, u_botColor, botMask);
 
             // Sfumatura intermedia (influenzata anch'essa dal tempo e spessore variabile)
@@ -455,41 +459,26 @@
         const uOffsetLoc = gl.getUniformLocation(program, "u_offset");
         const uTimeLoc = gl.getUniformLocation(program, "u_time"); // Location per il timer
         const uSplitLoc = gl.getUniformLocation(program, "u_split"); // Riferimento allo split uniform
-        const uRotationLoc = gl.getUniformLocation(program, "u_rotation"); // Riferimento alla rotazione dello shader
 
         // --- 3. GESTIONE SENSORI E ANIMAZIONE ---
         let targetOffsetX = 0, targetOffsetY = 0;
         let currentOffsetX = 0, currentOffsetY = 0;
         let currentSplitY = 0; // Per lo spostamento viscoso dello split
-        let targetRotation = 0, currentRotation = 0;
 
         let hasCalibrated = false;
         let baseGamma = 0;
         let baseBeta = 0;
-        let baseRoll = 0;
 
         // Sensore Giroscopio (Mobile)
         function handleOrientation(event) {
             let gamma = event.gamma || 0;
             let beta = event.beta || 0;
 
-            // Calcolo del roll assoluto della gravità rispetto allo schermo (in radianti)
-            let gammaRad = gamma * Math.PI / 180;
-            let betaRad = beta * Math.PI / 180;
-            let currentRoll = Math.atan2(Math.sin(gammaRad), Math.sin(betaRad));
-
             if (!hasCalibrated) {
                 baseGamma = gamma;
                 baseBeta = beta;
-                baseRoll = currentRoll;
                 hasCalibrated = true;
             }
-
-            // Calcola la rotazione differenziale e la normalizza tra -PI e PI (sensibilità bassissima, 12%)
-            let diffRoll = currentRoll - baseRoll;
-            if (diffRoll > Math.PI) diffRoll -= 2 * Math.PI;
-            if (diffRoll < -Math.PI) diffRoll += 2 * Math.PI;
-            targetRotation = -diffRoll * 0.12;
 
             // Calcola lo scostamento rispetto alla calibrazione iniziale
             let diffX = gamma - baseGamma;
@@ -508,8 +497,6 @@
         function handleMouse(event) {
             targetOffsetX = ((event.clientX / window.innerWidth) * 2 - 1) * 0.35;
             targetOffsetY = (-((event.clientY / window.innerHeight) * 2 - 1)) * 0.35;
-            // Lievissima rotazione del mouse su desktop per un look 3D reattivo (ridotta sensibilità)
-            targetRotation = targetOffsetX * 0.015;
         }
 
         // Avvio Interazione al Tap
@@ -573,7 +560,6 @@
             // Interpolazione lineare per ammorbidire il movimento del sensore
             currentOffsetX += (targetOffsetX - currentOffsetX) * 0.05;
             currentOffsetY += (targetOffsetY - currentOffsetY) * 0.05;
-            currentRotation += (targetRotation - currentRotation) * 0.05; // Rotazione fluida
 
             // Spostamento viscoso della linea di divisione (più lento per maggiore fluidità)
             currentSplitY += (targetOffsetY - currentSplitY) * 0.025;
@@ -583,7 +569,6 @@
             // Aggiorna dinamicamente il contrasto del testo basandosi sul colore sotto
             updateTextColors(dynamicSplit);
 
-            gl.uniform1f(uRotationLoc, currentRotation); // Invia la rotazione allo shader
             gl.uniform2f(uOffsetLoc, currentOffsetX, currentOffsetY);
             gl.drawArrays(gl.TRIANGLES, 0, 6);
             
@@ -593,7 +578,6 @@
         // Disegna una volta il frame iniziale in attesa del click
         gl.uniform1f(uTimeLoc, 0);
         gl.uniform1f(uSplitLoc, splitRatio);
-        gl.uniform1f(uRotationLoc, 0);
         gl.uniform2f(uOffsetLoc, 0, 0);
         gl.drawArrays(gl.TRIANGLES, 0, 6);
 
