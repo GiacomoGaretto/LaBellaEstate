@@ -100,7 +100,9 @@
 
         /* Dimensioni specifiche */
         #text-top {
-            font-size: 0.55rem; /* Antonio Scaramuzza più piccolo */
+            font-size: 0.75rem;
+            font-weight: 300;
+            letter-spacing: 0.15em;
         }
 
         #text-center {
@@ -134,6 +136,7 @@
         .location-container .justified-text {
             width: 75%; /* Box ristretto anche per la location */
             max-width: 280px;
+            transform: translateY(-10dvh);
         }
 
         .coords {
@@ -439,13 +442,31 @@
         let currentOffsetX = 0, currentOffsetY = 0;
         let currentSplitY = 0; // Per lo spostamento viscoso dello split
 
+        let hasCalibrated = false;
+        let baseGamma = 0;
+        let baseBeta = 0;
+
         // Sensore Giroscopio (Mobile)
         function handleOrientation(event) {
-            // Limitiamo l'inclinazione per evitare che lo shader si sfasi troppo
-            let x = event.gamma ? Math.max(-45, Math.min(45, event.gamma)) : 0; // Sinistra/Destra
-            let y = event.beta ? Math.max(-45, Math.min(45, event.beta)) : 0;   // Avanti/Indietro
-            targetOffsetX = x / 45.0; 
-            targetOffsetY = y / 45.0; 
+            let gamma = event.gamma || 0;
+            let beta = event.beta || 0;
+
+            if (!hasCalibrated) {
+                baseGamma = gamma;
+                baseBeta = beta;
+                hasCalibrated = true;
+            }
+
+            // Calcola lo scostamento rispetto alla calibrazione iniziale
+            let diffX = gamma - baseGamma;
+            let diffY = beta - baseBeta;
+
+            // Limitiamo l'inclinazione a ±30 gradi per controllare l'escursione dello shader
+            let x = Math.max(-30, Math.min(30, diffX));
+            let y = Math.max(-30, Math.min(30, diffY));
+
+            targetOffsetX = x / 30.0; 
+            targetOffsetY = y / 30.0; 
         }
 
         // Sensore Mouse (Desktop Fallback)
