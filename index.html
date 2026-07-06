@@ -156,18 +156,14 @@
             opacity: 1;
         }
 
-        .center-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            width: 100%;
-        }
-
         .event-date-time {
+            position: absolute;
+            top: 67dvh;
+            left: 0;
+            width: 100%;
             font-size: 0.75rem;
             font-weight: 300;
             line-height: 1.6;
-            margin-top: 14px;
             text-align: center;
             letter-spacing: 0.15em;
             text-transform: uppercase;
@@ -193,14 +189,14 @@
             <span>Scaramuzza</span>
         </div>
 
-        <!-- Nome evento e Data/Ora raggruppati -->
-        <div class="center-container">
-            <div class="text-box justified-text" id="text-center">
-                La Bella Estate
-            </div>
-            <div class="event-date-time" id="text-date">
-                24/07/2026<br>20:00
-            </div>
+        <!-- Nome evento: Giustificato -->
+        <div class="text-box justified-text" id="text-center">
+            La Bella Estate
+        </div>
+
+        <!-- Data e Ora posizionata a metà tra titolo e luogo -->
+        <div class="event-date-time" id="text-date">
+            24/07/2026<br>20:00
         </div>
 
         <!-- Location e Coordinate distanziate -->
@@ -306,7 +302,7 @@
                 softnessBot = 0.15;
             }
 
-            float grain = (fract(sin(dot(floor(v_uv * u_res / 1.8), vec2(12.9898,78.233)*2.0)) * 43758.5453) - 0.5) * 0.085;
+            float grain = (fract(sin(dot(floor(v_uv * u_res / 1.4), vec2(12.9898,78.233)*2.0)) * 43758.5453) - 0.5) * 0.058;
 
             // Blocco Superiore
             vec4 topBounds = vec4(leftBoundTop, u_split + 0.03, rightBoundTop, 0.93);
@@ -439,10 +435,19 @@
                 centerTargetColor = botRgb;  // Cade all'interno del blocco inferiore
             }
 
-            let centerContrastColor = rgbToCss(getBestContrastingPaletteColor(centerTargetColor, palette));
+            // Data a y = 0.33 in coordinate UV (corrispondente a top: 67dvh)
+            let dateTargetColor = bgRgb;
+            if (Math.abs(0.33 - currentSplitVal) < lineThickness) {
+                dateTargetColor = lineRgb;
+            } else if (0.33 > currentSplitVal + 0.03) {
+                dateTargetColor = topRgb;
+            } else if (0.33 < currentSplitVal - 0.03) {
+                dateTargetColor = botRgb;
+            }
+
             document.getElementById('text-top').style.color = rgbToCss(getBestContrastingPaletteColor(topRgb, palette));
-            document.getElementById('text-center').style.color = centerContrastColor;
-            document.getElementById('text-date').style.color = centerContrastColor;
+            document.getElementById('text-center').style.color = rgbToCss(getBestContrastingPaletteColor(centerTargetColor, palette));
+            document.getElementById('text-date').style.color = rgbToCss(getBestContrastingPaletteColor(dateTargetColor, palette));
             document.getElementById('text-bottom').style.color = rgbToCss(getBestContrastingPaletteColor(botRgb, palette));
         }
 
