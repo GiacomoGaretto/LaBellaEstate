@@ -426,17 +426,18 @@
         gl.uniform3fv(gl.getUniformLocation(program, "u_topColor"), topRgb);
         gl.uniform3fv(gl.getUniformLocation(program, "u_botColor"), botRgb);
         gl.uniform3fv(gl.getUniformLocation(program, "u_lineColor"), lineRgb);
-        gl.uniform1f(gl.getUniformLocation(program, "u_split"), splitRatio);
         gl.uniform1f(gl.getUniformLocation(program, "u_lineThickness"), lineThickness); // Inviamo lo spessore alla GPU
         gl.uniform1f(gl.getUniformLocation(program, "u_seed"), random() * 100.0);
 
         const uResLoc = gl.getUniformLocation(program, "u_res");
         const uOffsetLoc = gl.getUniformLocation(program, "u_offset");
         const uTimeLoc = gl.getUniformLocation(program, "u_time"); // Location per il timer
+        const uSplitLoc = gl.getUniformLocation(program, "u_split"); // Riferimento allo split uniform
 
         // --- 3. GESTIONE SENSORI E ANIMAZIONE ---
         let targetOffsetX = 0, targetOffsetY = 0;
         let currentOffsetX = 0, currentOffsetY = 0;
+        let currentSplitY = 0; // Per lo spostamento viscoso dello split
 
         // Sensore Giroscopio (Mobile)
         function handleOrientation(event) {
@@ -515,6 +516,11 @@
             currentOffsetX += (targetOffsetX - currentOffsetX) * 0.05;
             currentOffsetY += (targetOffsetY - currentOffsetY) * 0.05;
 
+            // Spostamento viscoso della linea di divisione (più lento per maggiore fluidità)
+            currentSplitY += (targetOffsetY - currentSplitY) * 0.025;
+            let dynamicSplit = Math.max(0.15, Math.min(0.85, splitRatio + currentSplitY * 0.15));
+            gl.uniform1f(uSplitLoc, dynamicSplit);
+
             gl.uniform2f(uOffsetLoc, currentOffsetX, currentOffsetY);
             gl.drawArrays(gl.TRIANGLES, 0, 6);
             
@@ -523,6 +529,7 @@
         
         // Disegna una volta il frame iniziale in attesa del click
         gl.uniform1f(uTimeLoc, 0);
+        gl.uniform1f(uSplitLoc, splitRatio);
         gl.uniform2f(uOffsetLoc, 0, 0);
         gl.drawArrays(gl.TRIANGLES, 0, 6);
 
