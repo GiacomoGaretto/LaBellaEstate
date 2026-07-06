@@ -158,7 +158,7 @@
 
         .event-date-time {
             position: absolute;
-            top: 67dvh;
+            top: 60dvh;
             left: 0;
             width: 100%;
             font-size: 0.75rem;
@@ -435,13 +435,13 @@
                 centerTargetColor = botRgb;  // Cade all'interno del blocco inferiore
             }
 
-            // Data a y = 0.33 in coordinate UV (corrispondente a top: 67dvh)
+            // Data a y = 0.40 in coordinate UV (corrispondente a top: 60dvh)
             let dateTargetColor = bgRgb;
-            if (Math.abs(0.33 - currentSplitVal) < lineThickness) {
+            if (Math.abs(0.40 - currentSplitVal) < lineThickness) {
                 dateTargetColor = lineRgb;
-            } else if (0.33 > currentSplitVal + 0.03) {
+            } else if (0.40 > currentSplitVal + 0.03) {
                 dateTargetColor = topRgb;
-            } else if (0.33 < currentSplitVal - 0.03) {
+            } else if (0.40 < currentSplitVal - 0.03) {
                 dateTargetColor = botRgb;
             }
 
