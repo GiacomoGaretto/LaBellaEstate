@@ -455,6 +455,16 @@
 
         // Avvio Interazione al Tap
         document.getElementById('intro-screen').addEventListener('click', async function() {
+            // Attivazione Fullscreen API
+            const docEl = document.documentElement;
+            if (docEl.requestFullscreen) {
+                docEl.requestFullscreen().catch(err => console.warn("Fullscreen request failed: ", err));
+            } else if (docEl.webkitRequestFullscreen) { /* Safari / iOS fallback */
+                docEl.webkitRequestFullscreen();
+            } else if (docEl.msRequestFullscreen) {
+                docEl.msRequestFullscreen();
+            }
+
             // Richiesta permessi DeviceOrientation (Necessario per iOS 13+)
             if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
                 try {
