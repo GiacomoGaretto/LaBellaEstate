@@ -485,11 +485,11 @@
                 hasCalibrated = true;
             }
 
-            // Calcola la rotazione differenziale e la normalizza tra -PI e PI
+            // Calcola la rotazione differenziale e la normalizza tra -PI e PI (sensibilità bassissima, 12%)
             let diffRoll = currentRoll - baseRoll;
             if (diffRoll > Math.PI) diffRoll -= 2 * Math.PI;
             if (diffRoll < -Math.PI) diffRoll += 2 * Math.PI;
-            targetRotation = -diffRoll; // Rotazione inversa per stabilizzare l'orizzonte
+            targetRotation = -diffRoll * 0.12;
 
             // Calcola lo scostamento rispetto alla calibrazione iniziale
             let diffX = gamma - baseGamma;
@@ -508,8 +508,8 @@
         function handleMouse(event) {
             targetOffsetX = ((event.clientX / window.innerWidth) * 2 - 1) * 0.35;
             targetOffsetY = (-((event.clientY / window.innerHeight) * 2 - 1)) * 0.35;
-            // Lievissima rotazione del mouse su desktop per un look 3D reattivo
-            targetRotation = targetOffsetX * 0.08;
+            // Lievissima rotazione del mouse su desktop per un look 3D reattivo (ridotta sensibilità)
+            targetRotation = targetOffsetX * 0.015;
         }
 
         // Avvio Interazione al Tap
