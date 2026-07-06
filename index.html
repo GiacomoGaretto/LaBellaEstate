@@ -21,8 +21,6 @@
             font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             margin: 0;
             padding: 0;
-            touch-action: none;
-            position: fixed;
         }
 
         /* Schermata Introduttiva (Necessaria per richiedere i permessi del giroscopio su iOS) */
@@ -379,19 +377,23 @@
 
         function rgbToCss(rgb) { return `rgb(${Math.round(rgb[0]*255)}, ${Math.round(rgb[1]*255)}, ${Math.round(rgb[2]*255)})`; }
 
-        // Identifica su quale colore di sfondo cade esattamente la scritta centrale
-        let centerTargetColor = bgRgb;
-        if (Math.abs(0.5 - splitRatio) < lineThickness) {
-            centerTargetColor = lineRgb; // Cade sopra la striscia colorata
-        } else if (0.5 > splitRatio + 0.03) {
-            centerTargetColor = topRgb;  // Cade all'interno del blocco superiore
-        } else if (0.5 < splitRatio - 0.03) {
-            centerTargetColor = botRgb;  // Cade all'interno del blocco inferiore
+        function updateTextColors(currentSplitVal) {
+            let centerTargetColor = bgRgb;
+            if (Math.abs(0.5 - currentSplitVal) < lineThickness) {
+                centerTargetColor = lineRgb; // Cade sopra la striscia colorata
+            } else if (0.5 > currentSplitVal + 0.03) {
+                centerTargetColor = topRgb;  // Cade all'interno del blocco superiore
+            } else if (0.5 < currentSplitVal - 0.03) {
+                centerTargetColor = botRgb;  // Cade all'interno del blocco inferiore
+            }
+
+            document.getElementById('text-top').style.color = rgbToCss(getBestContrastingPaletteColor(topRgb, palette));
+            document.getElementById('text-center').style.color = rgbToCss(getBestContrastingPaletteColor(centerTargetColor, palette));
+            document.getElementById('text-bottom').style.color = rgbToCss(getBestContrastingPaletteColor(botRgb, palette));
         }
 
-        document.getElementById('text-top').style.color = rgbToCss(getBestContrastingPaletteColor(topRgb, palette));
-        document.getElementById('text-center').style.color = rgbToCss(getBestContrastingPaletteColor(centerTargetColor, palette));
-        document.getElementById('text-bottom').style.color = rgbToCss(getBestContrastingPaletteColor(botRgb, palette));
+        // Configurazione iniziale dei colori
+        updateTextColors(splitRatio);
 
 
         // --- 2. GESTIONE WEBGL ---
@@ -465,14 +467,15 @@
             let x = Math.max(-30, Math.min(30, diffX));
             let y = Math.max(-30, Math.min(30, diffY));
 
-            targetOffsetX = x / 30.0; 
-            targetOffsetY = y / 30.0; 
+            // Riduciamo la sensibilità complessiva (moltiplicatore 0.35)
+            targetOffsetX = (x / 30.0) * 0.35; 
+            targetOffsetY = (y / 30.0) * 0.35; 
         }
 
         // Sensore Mouse (Desktop Fallback)
         function handleMouse(event) {
-            targetOffsetX = (event.clientX / window.innerWidth) * 2 - 1;
-            targetOffsetY = -((event.clientY / window.innerHeight) * 2 - 1);
+            targetOffsetX = ((event.clientX / window.innerWidth) * 2 - 1) * 0.35;
+            targetOffsetY = (-((event.clientY / window.innerHeight) * 2 - 1)) * 0.35;
         }
 
         // Avvio Interazione al Tap
@@ -541,6 +544,9 @@
             currentSplitY += (targetOffsetY - currentSplitY) * 0.025;
             let dynamicSplit = Math.max(0.15, Math.min(0.85, splitRatio + currentSplitY * 0.15));
             gl.uniform1f(uSplitLoc, dynamicSplit);
+
+            // Aggiorna dinamicamente il contrasto del testo basandosi sul colore sotto
+            updateTextColors(dynamicSplit);
 
             gl.uniform2f(uOffsetLoc, currentOffsetX, currentOffsetY);
             gl.drawArrays(gl.TRIANGLES, 0, 6);
