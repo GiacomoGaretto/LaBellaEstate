@@ -32,7 +32,7 @@
             height: 100%;
             height: calc(var(--vh, 1vh) * 100);
             height: 100dvh;
-            background-color: #1a1a1a;
+            background-color: #000;
             color: #ececec;
             z-index: 10;
             display: flex;
@@ -132,10 +132,15 @@
             align-items: center; /* Centra gli elementi al suo interno */
         }
 
-        .location-container .justified-text {
+        .location-container .centered-text {
             width: 75%; /* Box ristretto anche per la location */
             max-width: 280px;
-            transform: translateY(-10dvh);
+            text-align: center;
+            letter-spacing: 0.15em;
+        }
+
+        #text-bottom {
+            transform: translateY(-4dvh);
         }
 
         .coords {
@@ -146,7 +151,8 @@
             text-align: center;
             letter-spacing: 0.15em;
             opacity: 0.9;
-            text-decoration: none;
+            text-decoration: underline;
+            text-underline-offset: 4px;
             color: inherit;
             pointer-events: auto; /* Abilita i click */
             cursor: pointer;
@@ -156,26 +162,13 @@
             opacity: 1;
         }
 
-        .event-date-time {
-            position: absolute;
-            top: 60dvh;
-            left: 0;
-            width: 100%;
-            font-size: 0.75rem;
-            font-weight: 300;
-            line-height: 1.6;
-            text-align: center;
-            letter-spacing: 0.15em;
-            text-transform: uppercase;
-            transition: color 1.2s cubic-bezier(0.25, 0.8, 0.25, 1);
-        }
     </style>
 </head>
 <body>
 
     <!-- Schermata di blocco iniziale -->
     <div id="intro-screen">
-        <div class="intro-text">Tocca per aprire</div>
+        <div class="intro-text">Ti aspetto <span style="text-decoration: underline; text-underline-offset: 3px;">qui</span></div>
     </div>
 
     <!-- Canvas di sfondo -->
@@ -183,10 +176,10 @@
 
     <!-- Testi in sovrimpressione -->
     <div class="content-layer" id="main-content">
-        <!-- Nome festeggiato: 2 righe centrate -->
+        <!-- Data e Ora dell'evento in alto al posto del nome -->
         <div class="text-box centered-text" id="text-top">
-            <span>Antonio</span>
-            <span>Scaramuzza</span>
+            <span>24/07/2026</span>
+            <span>19:30</span>
         </div>
 
         <!-- Nome evento: Giustificato -->
@@ -194,14 +187,9 @@
             La Bella Estate
         </div>
 
-        <!-- Data e Ora posizionata a metà tra titolo e luogo -->
-        <div class="event-date-time" id="text-date">
-            24/07/2026<br>20:00
-        </div>
-
         <!-- Location e Coordinate distanziate -->
         <div class="text-box location-container" id="text-bottom">
-            <div class="justified-text">Società Canottieri Armida</div>
+            <div class="centered-text">Società Canottieri Armida</div>
             <a href="https://maps.app.goo.gl/gza2ciLw4tdfuweh8" target="_blank" rel="noopener" class="coords">45° 03' 17.18" N<br>07° 41' 16.62" E</a>
         </div>
     </div>
@@ -384,9 +372,8 @@
         // Randomicità aumentata: la linea può variare dal 25% al 75% dell'altezza dello schermo
         const splitRatio = 0.25 + random() * 0.50; 
 
-        // Generazione randomica dello spessore della linea (0 = assente, 0.15 = molto spessa)
-        // Circa il 25% di probabilità che il quadro non abbia alcuna linea di separazione
-        const lineThickness = random() > 0.25 ? random() * 0.15 : 0.0;
+        // Generazione randomica dello spessore della linea: o non c'è (25% probabilità) o è grande (tra 0.06 e 0.15)
+        const lineThickness = random() > 0.25 ? (0.06 + random() * 0.09) : 0.0;
 
         const palette = [bgRgb, topRgb, botRgb, lineRgb];
 
@@ -435,19 +422,8 @@
                 centerTargetColor = botRgb;  // Cade all'interno del blocco inferiore
             }
 
-            // Data a y = 0.40 in coordinate UV (corrispondente a top: 60dvh)
-            let dateTargetColor = bgRgb;
-            if (Math.abs(0.40 - currentSplitVal) < lineThickness) {
-                dateTargetColor = lineRgb;
-            } else if (0.40 > currentSplitVal + 0.03) {
-                dateTargetColor = topRgb;
-            } else if (0.40 < currentSplitVal - 0.03) {
-                dateTargetColor = botRgb;
-            }
-
             document.getElementById('text-top').style.color = rgbToCss(getBestContrastingPaletteColor(topRgb, palette));
             document.getElementById('text-center').style.color = rgbToCss(getBestContrastingPaletteColor(centerTargetColor, palette));
-            document.getElementById('text-date').style.color = rgbToCss(getBestContrastingPaletteColor(dateTargetColor, palette));
             document.getElementById('text-bottom').style.color = rgbToCss(getBestContrastingPaletteColor(botRgb, palette));
         }
 
@@ -606,6 +582,11 @@
 
             // Aggiorna dinamicamente il contrasto del testo basandosi sul colore sotto
             updateTextColors(dynamicSplit);
+
+            // Effetto parallasse leggero sui testi in direzione opposta (max 10px)
+            const textPx = -currentOffsetX * 10;
+            const textPy = -currentOffsetY * 10;
+            document.getElementById('main-content').style.transform = `translate(${textPx}px, ${textPy}px)`;
 
             gl.uniform2f(uOffsetLoc, currentOffsetX, currentOffsetY);
             gl.drawArrays(gl.TRIANGLES, 0, 6);
