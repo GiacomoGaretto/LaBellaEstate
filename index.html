@@ -270,7 +270,7 @@
 
         void main() {
             // Effetto Parallasse + Leggera oscillazione liquida autonoma continua
-            vec2 parallaxUV = v_uv - u_offset * 0.02 + vec2(sin(u_time * 0.4) * 0.005, cos(u_time * 0.3) * 0.005);
+            vec2 parallaxUV = v_uv - u_offset * 0.12 + vec2(sin(u_time * 0.4) * 0.005, cos(u_time * 0.3) * 0.005);
             vec3 finalColor = u_bg;
 
             float aspect = u_res.x / u_res.y;
@@ -375,8 +375,8 @@
         // Randomicità aumentata: la linea può variare dal 25% al 75% dell'altezza dello schermo
         const splitRatio = 0.25 + random() * 0.50; 
 
-        // Generazione randomica dello spessore della linea: o non c'è (25% probabilità) o è grande (tra 0.06 e 0.15)
-        const lineThickness = random() > 0.25 ? (0.06 + random() * 0.09) : 0.0;
+        // Linea di divisione completamente rimossa come da richiesta
+        const lineThickness = 0.0;
 
         const palette = [bgRgb, topRgb, botRgb, lineRgb];
 
