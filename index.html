@@ -152,6 +152,7 @@
             letter-spacing: 0.15em;
             opacity: 0.9;
             text-decoration: underline;
+            text-decoration-thickness: 1px;
             text-underline-offset: 4px;
             color: inherit;
             pointer-events: auto; /* Abilita i click */
@@ -168,7 +169,7 @@
 
     <!-- Schermata di blocco iniziale -->
     <div id="intro-screen">
-        <div class="intro-text">Ti aspetto <span style="text-decoration: underline; text-underline-offset: 3px;">qui</span></div>
+        <div class="intro-text">Ti aspetto <span style="text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px;">qui</span></div>
     </div>
 
     <!-- Canvas di sfondo -->
@@ -583,9 +584,9 @@
             // Aggiorna dinamicamente il contrasto del testo basandosi sul colore sotto
             updateTextColors(dynamicSplit);
 
-            // Effetto parallasse leggero sui testi in direzione opposta (max 10px)
-            const textPx = -currentOffsetX * 10;
-            const textPy = -currentOffsetY * 10;
+            // Aumentiamo il parallasse del testo (moltiplicatore 80, max ~28px di spostamento)
+            const textPx = -currentOffsetX * 80;
+            const textPy = -currentOffsetY * 80;
             document.getElementById('main-content').style.transform = `translate(${textPx}px, ${textPy}px)`;
 
             gl.uniform2f(uOffsetLoc, currentOffsetX, currentOffsetY);
