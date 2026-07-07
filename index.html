@@ -105,8 +105,8 @@
         }
 
         #text-center {
-            width: 75%; /* Box ristretto */
-            max-width: 280px;
+            width: 65%; /* Box più stretto per avvicinare le parole */
+            max-width: 220px;
             align-self: center;
         }
 
@@ -586,9 +586,9 @@
             // Aggiorna dinamicamente il contrasto del testo basandosi sul colore sotto
             updateTextColors(dynamicSplit);
 
-            // Impostiamo il parallasse del testo (moltiplicatore 20, max ~7px di spostamento per un look discreto)
-            const textPx = -currentOffsetX * 20;
-            const textPy = -currentOffsetY * 20;
+            // Impostiamo il parallasse del testo (moltiplicatore 30, max ~10px di spostamento)
+            const textPx = -currentOffsetX * 30;
+            const textPy = -currentOffsetY * 30;
             document.getElementById('main-content').style.transform = `translate(${textPx}px, ${textPy}px)`;
 
             gl.uniform2f(uOffsetLoc, currentOffsetX, currentOffsetY);
